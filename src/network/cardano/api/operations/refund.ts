@@ -1,9 +1,19 @@
+import { Transaction } from '@emurgo/cardano-serialization-lib-nodejs';
 import {
+  ExUnitsCalculator,
+  ExUnitsDescriptor,
   mkTxAsm,
   mkTxMath,
+  QuickblueTx,
+  QuickblueTxOut,
   RefundTxBuilder,
   ScriptCredsV1,
+  TxCandidate,
 } from '@spectrumlabs/cardano-dex-sdk';
+import {
+  DEFAULT_EX_UNITS_MEM,
+  DEFAULT_EX_UNITS_STEPS,
+} from '@spectrumlabs/cardano-dex-sdk/build/main/amm/interpreters/refundTxBuilder/refundTxBuilder';
 import {
   OpInRefsMainnetV1,
   OrderAddrsV1Mainnet,
@@ -42,6 +52,19 @@ import {
 } from './common/inputSelector';
 import { submitTx } from './common/submitTxCandidate';
 
+class SpectrumExUnitsCalculator implements ExUnitsCalculator {
+  calculateExUnits(
+    tx: QuickblueTx,
+    outToRefund: QuickblueTxOut,
+  ): Promise<ExUnitsDescriptor> {
+    console.log(tx, outToRefund);
+    return Promise.resolve({
+      mem: DEFAULT_EX_UNITS_MEM,
+      steps: DEFAULT_EX_UNITS_STEPS,
+    });
+  }
+}
+
 export const refundBuilder$ = combineLatest([
   cardanoWasm$,
   cardanoNetworkParams$,
@@ -78,6 +101,7 @@ export const refundBuilder$ = combineLatest([
       txAsm,
       cardanoNetworkParams.pparams,
       cardanoNetwork,
+      new SpectrumExUnitsCalculator(),
     );
   }),
   publishReplay(1),
@@ -98,10 +122,9 @@ const walletRefund = (txId: TxId): Observable<TxId> =>
       ),
     ),
     tap(console.log, console.log),
-    map((data) => data[1]),
-    map((tx) => {
+    map(([, tx, error]: [TxCandidate, Transaction | null, Error | null]) => {
       if (!tx) {
-        throw new Error('');
+        throw error || new Error('');
       }
       return tx;
     }),
@@ -127,6 +150,8 @@ export const refund = (
       xAsset: xAmount,
       yAsset: yAmount,
     },
+    undefined,
+    true,
   );
 
   return subject.asObservable();

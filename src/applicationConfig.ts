@@ -58,10 +58,11 @@ interface ApplicationConfig {
   readonly requestRetryCount: number;
   readonly cardanoAmmSwapsOpenTime: DateTime;
   readonly lbspLiquidityPools: string[];
+  readonly lbspBoostedLiquidityPools: string[];
 }
 
 export const applicationConfig: ApplicationConfig = {
-  spfUsdRateUrl: 'https://test-api.spectrum.fi/v2/price-tracking/spf/price',
+  spfUsdRateUrl: 'https://api.spectrum.fi/v1/price-tracking/spf/price',
   operationTimeoutTime: 60_000,
   cookieDomain: isProductionEnv() ? 'spectrum.fi' : undefined,
   cardanoMaintenance: false,
@@ -82,12 +83,12 @@ export const applicationConfig: ApplicationConfig = {
       analyticUrl: 'https://analytics.spectrum.fi/cardano/',
       isCreatePoolAvailable: false,
     },
-    cardano_mainnet: {
+    cardano: {
       defaultTokenListUrl: 'https://spectrum.fi/cardano-token-list.json',
       metadataUrl:
         'https://raw.githubusercontent.com/spectrum-finance/token-logos/master/logos/cardano',
       networkUrl: 'https://explorer.spectrum.fi/cardano/mainnet/v1/',
-      explorerUrl: 'https://cexplorer.io',
+      explorerUrl: 'https://cardanoscan.io',
       lowBalanceGuide: '',
       analyticUrl: 'https://analytics.spectrum.fi/cardano/',
       isCreatePoolAvailable: false,
@@ -174,6 +175,14 @@ export const applicationConfig: ApplicationConfig = {
     '1b3d37d78650dd8527fa02f8783d9b98490df3b464dd44af0e0593ceb4717702',
     'af629d8e63d08a9770bc543f807bdb82dcda942d4e21d506771f975dc2b3fd3a',
     '24e9f9a3e0aa89092d8690941900323dea2ee3603ca7368c0c35175259df6930',
+    '563394b82c5a518351fd6994a5f115b0165b8f96e05d460453ba21837091b7dd',
+    '4136eba32fe50118ce0c556b83f85c0460da975489a3a5f3d0450fef0ab40dd5',
+    '53472966344861e6dc21f59517199672a6486b6ebe57aa211cad03afdd6b816f',
+    '5f22cb20453e0856acb4b40e4ee2430e4b73a5abe4e72a0b2235a0adfb48a2be',
+    'feb3a5c4b30fbe82ae316465c343169fcf3c0db6bc821902be4928270289f6eb',
+    '82737701cc3e083ba3644ffd372c543198a74510e0a45e3bc21744c3185abef4',
+    '11c4f52ebeb0e1d291f541a095edd0c101fffaf421c6a6744321b9e4934b724d',
+    '25f0defafdc6eb7a9942d26ca8e909f620221bbd53d42df648b7366dbb3dde71',
   ],
   testFarms: [
     '69eff57ea62b13c58e5668e3fbc9927fdb2dffb1c692261f98728a665b2f8abb',
@@ -199,8 +208,16 @@ export const applicationConfig: ApplicationConfig = {
     'fd011feb9dc34f85e58e56838989816343f5c62619a82f6a089f0548414749585f4144415f4e4654',
     '544ab8ca262e397d1dce7750742c56f934af83591362fe5b52e29d2b5368656e4d6963726f5553445f4144415f4e4654',
     '4a27465112a39464e6dd5ee470c552ebb3cb42925d5ec04014967908534e454b5f4144415f4e4654',
-    '',
+    'def400a2deaa534e5a73ee15d31b15e77dba28e6859c6c86cf712a574144415f534f43494554595f4e4654',
+    'b208df2d037945ab889d95009952aa42d0032a701ad01dacd36c68c1535441424c455f4144415f4e4654',
+    'b5be4da4671a056991cc42d3434c6e2a756dc1aa437dc922689421db634254435f4144415f4e4654',
+    '7363fa65aae0ce09b283eaf6550ae9dc363f8abe2f1b56b1b719c27b4c4946495f4144415f4e4654',
+    'd79bafbe9fe4b1a60e1dc777d0af754cf4e2027ec5159b8faefa14f54f50545f4144415f4e4654',
+    '6666493dfb6eca522d7b02581cfbef750f096f03823c69a4502268a942414e4b5f4144415f4e4654',
+    '424ae89899ef17e30d2f2ea88ba88a67b092041cb3d5759c2fba68444e4d4b525f4144415f4e4654',
+    'cb114d541707030fb93946aa36d0eb448caf2be01674d58493aace06585241595f4144415f4e4654',
   ],
+  lbspBoostedLiquidityPools: [],
   operationsRestrictions: [
     {
       asset: 'd71693c49a84fbbecd4908c94813b46514b18b67a99952dc1e6e4791556de413',

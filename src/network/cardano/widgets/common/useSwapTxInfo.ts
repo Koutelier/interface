@@ -15,11 +15,7 @@ import { ammTxFeeMapping } from '../../api/operations/common/ammTxFeeMapping';
 import { minExecutorReward } from '../../api/operations/common/minExecutorReward';
 import { transactionBuilder$ } from '../../api/operations/common/transactionBuilder.ts';
 import { selectedWallet$ } from '../../api/wallet/wallet';
-import {
-  CardanoSettings,
-  settings,
-  useSettings,
-} from '../../settings/settings';
+import { CardanoSettings, useSettings } from '../../settings/settings';
 
 export interface ExtendedSwapTxInfo {
   readonly txFee: Currency | undefined;
@@ -71,7 +67,7 @@ const getSwapTxInfo = (
 export const useSwapTxInfo = (
   value,
 ): [ExtendedSwapTxInfo | undefined, boolean, CardanoSettings] => {
-  const { nitro, slippage } = useSettings();
+  const settings = useSettings();
   const [selectedWallet] = useObservable(selectedWallet$);
 
   const [swapTxInfo, updateSwapTxInfo, isSwapTxInfoLoading] =
@@ -89,12 +85,12 @@ export const useSwapTxInfo = (
         ? pool.pool.x.withAmount(fromAmount.amount)
         : pool.pool.y.withAmount(fromAmount.amount);
 
-    const quoteOutput = pool.pool.outputAmount(baseInput, slippage);
+    const quoteOutput = pool.pool.outputAmount(baseInput, settings.slippage);
 
     const timerId = setTimeout(() => {
       updateSwapTxInfo(value, {
-        slippage,
-        nitro,
+        slippage: settings.slippage,
+        nitro: settings.nitro,
         minExecutorReward: minExecutorReward,
         base: baseInput,
         quote: quoteOutput,
@@ -106,7 +102,7 @@ export const useSwapTxInfo = (
     }, 200);
 
     return () => clearTimeout(timerId);
-  }, [value.fromAmount, value.pool, nitro, slippage, settings, selectedWallet]);
+  }, [value.fromAmount, value.pool, settings, selectedWallet]);
 
   return [swapTxInfo, isSwapTxInfoLoading, settings];
 };

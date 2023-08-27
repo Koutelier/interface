@@ -73,8 +73,7 @@ import { useSettings } from '../../gateway/settings/settings';
 import { operationsSettings$ } from '../../gateway/widgets/operationsSettings';
 import { useGuardV2 } from '../../hooks/useGuard.ts';
 import { mapToSwapAnalyticsProps } from '../../utils/analytics/mapper';
-import { isLbspAmmPool, isPreLbspTimeGap } from '../../utils/lbsp.ts';
-import { isCardano } from '../../utils/network.ts';
+import { isPreLbspTimeGap } from '../../utils/lbsp.ts';
 import { PoolSelector } from './PoolSelector/PoolSelector';
 import { PriceImpactWarning } from './PriceImpactWarning/PriceImpactWarning';
 import { SwapFormModel } from './SwapFormModel';
@@ -82,6 +81,15 @@ import { SwapGraph } from './SwapGraph/SwapGraph';
 import { SwapInfo } from './SwapInfo/SwapInfo';
 import { SwitchButton } from './SwitchButton/SwitchButton';
 import { YieldFarmingBadge } from './YieldFarmingBadge/YieldFarmingBadge';
+
+const swapParamsCache$ = new BehaviorSubject<
+  | undefined
+  | {
+      base: string | undefined;
+      quote: string | undefined;
+      initialPoolId: string | undefined;
+    }
+>(undefined);
 
 const getToAssets = (fromAsset?: string) =>
   fromAsset ? getDefaultAssetsFor(fromAsset) : defaultTokenAssets$;
@@ -233,20 +241,6 @@ export const Swap = (): JSX.Element => {
   }: FormGroup<SwapFormModel>) =>
     !toAsset || !fromAsset ? t`Select a token` : undefined;
 
-  const ammPoolMinValueForSwapCardanoValidator: OperationValidator<SwapFormModel> =
-    ({ value: { pool } }) => {
-      if (isCardano()) {
-        const MIN_LQ_ADA_VALUE = '10000';
-
-        return pool?.x.lte(new Currency(MIN_LQ_ADA_VALUE, pool?.x.asset)) &&
-          isLbspAmmPool(pool?.id)
-          ? `Pool liquidity is low, need ${MIN_LQ_ADA_VALUE} ADA`
-          : undefined;
-      }
-
-      return undefined;
-    };
-
   const isPoolLoading: OperationLoader<SwapFormModel> = ({
     value: { fromAsset, toAsset, pool },
   }) => !!fromAsset && !!toAsset && !pool;
@@ -291,8 +285,15 @@ export const Swap = (): JSX.Element => {
     (assets) => {
       if (!form.value.fromAsset && !form.value.toAsset) {
         form.patchValue({
-          fromAsset: findLast(assets, (a) => a.id === base) || networkAsset,
-          toAsset: findLast(assets, (a) => a.id === quote),
+          fromAsset:
+            findLast(
+              assets,
+              (a) => a.id === (swapParamsCache$.getValue()?.base || base),
+            ) || networkAsset,
+          toAsset: findLast(
+            assets,
+            (a) => a.id === (swapParamsCache$.getValue()?.quote || quote),
+          ),
         });
       }
     },
@@ -324,6 +325,11 @@ export const Swap = (): JSX.Element => {
           quote: form.value.toAsset?.id,
           base: form.value.fromAsset?.id,
         });
+        swapParamsCache$.next({
+          initialPoolId: undefined,
+          quote: form.value.toAsset?.id,
+          base: form.value.fromAsset?.id,
+        });
       }
       if (!pools.length && form.value.toAsset && form.value.fromAsset) {
         form.patchValue(
@@ -344,8 +350,11 @@ export const Swap = (): JSX.Element => {
 
       if (!form.value.pool && initialPoolId) {
         newPool =
-          pools.find((p) => p.id === initialPoolId) ||
-          maxBy(pools, (p) => p.x.amount * p.y.amount);
+          pools.find(
+            (p) =>
+              p.id ===
+              (swapParamsCache$.getValue()?.initialPoolId || initialPoolId),
+          ) || maxBy(pools, (p) => p.x.amount * p.y.amount);
       } else {
         newPool =
           pools.find((p) => p.id === form.value.pool?.id) ||
@@ -407,6 +416,11 @@ export const Swap = (): JSX.Element => {
         quote: toAsset?.id,
         initialPoolId: pool?.id,
       });
+      swapParamsCache$.next({
+        base: fromAsset?.id,
+        quote: toAsset?.id,
+        initialPoolId: pool?.id,
+      });
 
       if (lastEditedField === 'from' && fromAmount && fromAmount.isPositive()) {
         form.controls.toAmount.patchValue(
@@ -446,7 +460,6 @@ export const Swap = (): JSX.Element => {
     () => [
       tokensNotSelectedValidator,
       amountEnteredValidator,
-      ammPoolMinValueForSwapCardanoValidator,
       insufficientLiquidityValidator,
       minValueForTokenValidator,
       insufficientFromForTxValidator,

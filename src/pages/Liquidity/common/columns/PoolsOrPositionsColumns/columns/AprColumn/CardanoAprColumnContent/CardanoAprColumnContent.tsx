@@ -1,15 +1,14 @@
-import { Divider, Flex, Typography } from '@ergolabs/ui-kit';
+import { Divider, Flex, Modal, Typography } from '@ergolabs/ui-kit';
 import { Trans } from '@lingui/macro';
 import { FC } from 'react';
 
-import { applicationConfig } from '../../../../../../../../applicationConfig';
 import { useObservable } from '../../../../../../../../common/hooks/useObservable';
 import { AmmPool } from '../../../../../../../../common/models/AmmPool';
 import { InfoTooltip } from '../../../../../../../../components/InfoTooltip/InfoTooltip';
+import { LbspFaqModal } from '../../../../../../../../components/LbspFaqModal/LbspFaqModal.tsx';
+import { SpfLogo } from '../../../../../../../../components/SpfLogo/SpfLogo.tsx';
+import { isLbspAmmPool } from '../../../../../../../../utils/lbsp.ts';
 import { calculateLbspApr } from './calculateLbspApr';
-
-const isLbspPool = (poolId: string): boolean =>
-  applicationConfig.lbspLiquidityPools.includes(poolId);
 
 interface LbspTooltipContentProps {
   readonly swapApr: number;
@@ -23,39 +22,68 @@ const LbspTooltipContent: FC<LbspTooltipContentProps> = ({
   swapApr,
 }) => {
   return (
-    <Flex col width={184}>
+    <Flex col width={200}>
       <Typography.Body tooltip>
         <Trans>Total APR</Trans>
       </Typography.Body>
       <Typography.Body size="large" tooltip strong>
-        {totalApr}%
+        {totalApr.toFixed(2)}%
       </Typography.Body>
       <Flex.Item marginTop={1} marginBottom={1}>
         <Divider />
       </Flex.Item>
       <Flex.Item display="flex" marginBottom={1}>
         <Flex.Item width={65} marginRight={1}>
-          <Typography.Body tooltip strong>
-            {swapApr ? `${swapApr}%` : '—'}
+          <Typography.Body tooltip size="small">
+            <Trans>Swap Fees:</Trans>
           </Typography.Body>
         </Flex.Item>
         <Flex.Item flex={1}>
-          <Typography.Body tooltip size="small">
-            <Trans>Swap fees APR 24h</Trans>
+          <Typography.Body tooltip strong>
+            {swapApr ? `${swapApr.toFixed(2)}%` : '—'}
           </Typography.Body>
         </Flex.Item>
       </Flex.Item>
       <Flex.Item display="flex">
-        <Flex.Item width={65} marginRight={1}>
-          <Typography.Body tooltip strong>
-            {lbspApr ? `${lbspApr}%` : '—'}
-          </Typography.Body>
-        </Flex.Item>
-        <Flex.Item flex={1}>
+        <Flex.Item width={65}>
           <Typography.Body tooltip size="small">
-            <Trans>LBSP APR</Trans>
+            <Trans>LBSP APR:</Trans>
           </Typography.Body>
         </Flex.Item>
+        <Flex.Item display="flex" align="center" flex={1}>
+          <Flex.Item marginRight={1}>
+            <SpfLogo w={16} h={16} />
+          </Flex.Item>
+
+          <Flex.Item marginRight={1}>
+            <Typography.Body tooltip strong>
+              {lbspApr ? `${lbspApr.toFixed(2)}%` : '—'}
+            </Typography.Body>
+          </Flex.Item>
+
+          <Typography.Link
+            style={{
+              color: 'var(--spectrum-hint-text)',
+              textDecoration: 'underline',
+              fontSize: '10px',
+            }}
+            onClick={(event) => {
+              event.stopPropagation();
+              Modal.open(() => <LbspFaqModal />);
+            }}
+          >
+            Read more
+          </Typography.Link>
+        </Flex.Item>
+      </Flex.Item>
+      <Flex.Item>
+        <Typography.Body
+          size="small"
+          style={{ color: 'var(--spectrum-hint-text)' }}
+        >
+          LBSP APR is calculated according to the current SPF price on Ergo
+          market
+        </Typography.Body>
       </Flex.Item>
     </Flex>
   );
@@ -63,10 +91,12 @@ const LbspTooltipContent: FC<LbspTooltipContentProps> = ({
 
 export interface CardanoAprColumnContent {
   readonly ammPool: AmmPool;
+  readonly isAllContentTrigger?: boolean;
 }
 
 const CardanoLbspAmmPoolArColumnContent: FC<CardanoAprColumnContent> = ({
   ammPool,
+  isAllContentTrigger,
 }) => {
   const [lbspApr] = useObservable(calculateLbspApr(ammPool), [], 0);
   const swapApr = ammPool.yearlyFeesPercent || 0;
@@ -78,6 +108,7 @@ const CardanoLbspAmmPoolArColumnContent: FC<CardanoAprColumnContent> = ({
         <InfoTooltip
           width={200}
           placement="top"
+          isAllContentTrigger={isAllContentTrigger}
           content={
             <LbspTooltipContent
               totalApr={totalApr}
@@ -86,7 +117,7 @@ const CardanoLbspAmmPoolArColumnContent: FC<CardanoAprColumnContent> = ({
             />
           }
         >
-          {totalApr}%
+          {totalApr.toFixed(2)}%
         </InfoTooltip>
       ) : (
         '—'
@@ -101,9 +132,15 @@ const CardanoStandardAmmPoolArColumnContent: FC<CardanoAprColumnContent> = ({
 
 export const CardanoAprColumnContent: FC<CardanoAprColumnContent> = ({
   ammPool,
+  isAllContentTrigger,
 }) => {
-  if (isLbspPool(ammPool.id)) {
-    return <CardanoLbspAmmPoolArColumnContent ammPool={ammPool} />;
+  if (isLbspAmmPool(ammPool.id)) {
+    return (
+      <CardanoLbspAmmPoolArColumnContent
+        isAllContentTrigger={isAllContentTrigger}
+        ammPool={ammPool}
+      />
+    );
   } else {
     return <CardanoStandardAmmPoolArColumnContent ammPool={ammPool} />;
   }
